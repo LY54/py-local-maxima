@@ -15,7 +15,10 @@ def read_heatmap(filepath):
 # TUNABLE PARAMETERS
 data_file = "/Users/benhollar/Documents/College/2020 - Fall/CS 5168/Final Project/py-local-maxima/py_local_maxima/data/heatmap.npy"
 data_reader = read_heatmap
-neighborhood = np.ones((3, 3))
+neighborhood = np.ones((100, 100))
+benchmark_iterations = 1
 
-# Core function
-py_local_maxima.benchmark(data_reader(data_file), neighborhood, iterations=1)
+# Core functionality
+data = data_reader(data_file)
+py_local_maxima.benchmark(data, neighborhood, benchmark_iterations)
+py_local_maxima.evaluate(data, neighborhood)

@@ -1,8 +1,34 @@
 from scipy.ndimage.filters import maximum_filter as _max_filter
 from scipy.ndimage.morphology import binary_erosion as _binary_erosion
+from skimage.feature import peak_local_max
 
 
-def detect_maximum_filter(image, neighborhood):
+def detect_skimage(image, neighborhood, threshold=1e-12):
+    """Detect peaks using a local maximum filter (via skimage)
+
+    Parameters
+    ----------
+    image : numpy.ndarray (2D)
+        The imagery to find the local maxima of
+    neighborhood : numpy.ndarray (2D)
+        A boolean matrix specifying a scanning window for maxima detection.
+        The neigborhood size is implicitly defined by the matrix dimensions.
+    threshold : float
+        The minimum acceptable value of a peak
+
+    Returns
+    -------
+    numpy.ndarray (2D)
+        A boolean matrix specifying maxima locations (True) and background
+        locations (False)
+    """
+    return peak_local_max(image,
+                          footprint=neighborhood,
+                          threshold_abs=threshold,
+                          indices=False)
+
+
+def detect_maximum_filter(image, neighborhood, threshold=1e-12):
     """Detect peaks using a local maximum filter
 
     Code courtesy https://stackoverflow.com/a/3689710 (adapted slightly).
@@ -14,6 +40,8 @@ def detect_maximum_filter(image, neighborhood):
     neighborhood : numpy.ndarray (2D)
         A boolean matrix specifying a scanning window for maxima detection.
         The neigborhood size is implicitly defined by the matrix dimensions.
+    threshold : float
+        The minimum acceptable value of a peak
 
     Returns
     -------
@@ -22,16 +50,9 @@ def detect_maximum_filter(image, neighborhood):
         locations (False)
     """
 
-    # Apply the local maximum filter; all pixels of maximal value in their
-    # neighborhood are set to 1
+    # Apply the local maximum filter, then remove any background (below
+    # threshold) values from our result.
     local_max = _max_filter(image, footprint=neighborhood) == image
-
-    # We must erode the background in order to successfully subtract it from
-    # local_max, otherwise a line will appear along the background border
-    background = (image == 0)
-    eroded_background = _binary_erosion(background,
-                                        structure=neighborhood,
-                                        border_value=1)
-
-    detected_peaks = local_max ^ eroded_background
+    detected_peaks = local_max ^ (image < threshold)
+    detected_peaks[image < threshold] = False
     return detected_peaks
