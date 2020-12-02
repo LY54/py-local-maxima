@@ -4,15 +4,24 @@ import math
 import py_local_maxima
 from timeit import timeit
 
-
+# Set up what we'll be benchmarking. Tests are tuples consisting of:
+#  1. A user-identifiable string for what the test is doing
+#  2. The command to run, as a string
 _tests = [
     ('CPU Max Filter',
      'py_local_maxima.cpu.detect_maximum_filter(image, neighborhood)'),
     ('CPU skimage Implementation',
      'py_local_maxima.cpu.detect_skimage(image, neighborhood)'),
-    ('GPU Naive Max Filter',
-     'py_local_maxima.gpu.detect_naive(image, neighborhood)'),
 ]
+# Add GPU tests conditionally
+try:
+    import pycuda  # type: ignore (silence warning about module import)
+    _tests.extend([
+        ('GPU Naive Max Filter',
+         'py_local_maxima.gpu.detect_naive(image, neighborhood)'),
+    ])
+except ImportError:
+    pass
 _setup = 'import py_local_maxima'
 
 

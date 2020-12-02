@@ -26,15 +26,17 @@ __global__ void NaiveDilationKernel(float *src, float *dst, int width, int heigh
         }
     }
     dst[y * width + x] = value;
-} 
+}
 """)
 naive_dilation = naive_dilation_mod.get_function("NaiveDilationKernel")
+
 
 def detect_naive(image, neighborhood, threshold=1e-12):
     """TODO
 
-    NOTE: `neighborhood` is merely an integer, not a boolean matrix as in cpu code
-          It specifies the side length of a square window and is expected to be odd
+    NOTE: `neighborhood` should become an integer, not a boolean matrix as in
+          cpu code. It specifies the side length of a square window and is
+          expected to be odd
     """
 
     # Image must be 32-bit for GPU code to work at all. Force cast our input
@@ -44,7 +46,7 @@ def detect_naive(image, neighborhood, threshold=1e-12):
     gpu_image = gpuarray.to_gpu(image)
     gpu_dilated_image = gpuarray.to_gpu(image)
     block = (32, 32, 1)
-    grid = (math.ceil(image.shape[1] / block[0]), 
+    grid = (math.ceil(image.shape[1] / block[0]),
             math.ceil(image.shape[0] / block[1]),
             1)
 
@@ -60,4 +62,4 @@ def detect_naive(image, neighborhood, threshold=1e-12):
     # TODO: Perform peak-finding on GPU, not CPU
     detected_peaks = gpu_dilated_image.get() == image
     detected_peaks[image < threshold] = False
-    return detected_peaks 
+    return detected_peaks
