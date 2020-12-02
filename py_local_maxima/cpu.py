@@ -52,7 +52,6 @@ def detect_maximum_filter(image, neighborhood, threshold=1e-12):
 
     # Apply the local maximum filter, then remove any background (below
     # threshold) values from our result.
-    local_max = _max_filter(image, footprint=neighborhood) == image
-    detected_peaks = local_max ^ (image < threshold)
+    detected_peaks = _max_filter(image, footprint=neighborhood) == image
     detected_peaks[image < threshold] = False
     return detected_peaks

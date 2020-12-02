@@ -10,6 +10,8 @@ _tests = [
      'py_local_maxima.cpu.detect_maximum_filter(image, neighborhood)'),
     ('CPU skimage Implementation',
      'py_local_maxima.cpu.detect_skimage(image, neighborhood)'),
+    ('GPU Naive Max Filter',
+     'py_local_maxima.gpu.detect_naive(image, neighborhood)'),
 ]
 _setup = 'import py_local_maxima'
 

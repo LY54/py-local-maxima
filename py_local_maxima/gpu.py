@@ -4,8 +4,6 @@ import pycuda.gpuarray as gpuarray
 from pycuda.compiler import SourceModule
 import numpy
 import math
-from scipy.ndimage.morphology import grey_dilation
-
 
 naive_dilation_mod = SourceModule("""
 #define FLT_MAX     3.40282347E+38F
@@ -30,37 +28,36 @@ __global__ void NaiveDilationKernel(float *src, float *dst, int width, int heigh
     dst[y * width + x] = value;
 } 
 """)
-
 naive_dilation = naive_dilation_mod.get_function("NaiveDilationKernel")
 
-src = numpy.random.randn(4, 4).astype(numpy.float32)
-dst = numpy.copy(src)
+def detect_naive(image, neighborhood, threshold=1e-12):
+    """TODO
 
-print('Source:')
-print(src)
-print()
+    NOTE: `neighborhood` is merely an integer, not a boolean matrix as in cpu code
+          It specifies the side length of a square window and is expected to be odd
+    """
 
-window_size = 3
-block = (32,32, 1)
-grid = (math.ceil(src.shape[1] / block[0]), math.ceil(src.shape[0] / block[1]), 1)
-naive_dilation(cuda.In(src), 
-               cuda.Out(dst),
-               numpy.int32(src.shape[1]),
-               numpy.int32(src.shape[0]),
-               numpy.int32(window_size),
-               block=block,
-               grid=grid)
+    # Image must be 32-bit for GPU code to work at all. Force cast our input
+    image = image.astype(numpy.float32)
 
-print('GPU:')
-print(dst)
-print()
+    # Initialize GPU arrays (on device) and some required CUDA inputs
+    gpu_image = gpuarray.to_gpu(image)
+    gpu_dilated_image = gpuarray.to_gpu(image)
+    block = (32, 32, 1)
+    grid = (math.ceil(image.shape[1] / block[0]), 
+            math.ceil(image.shape[0] / block[1]),
+            1)
 
-truth = grey_dilation(src, (window_size, window_size))
+    # Do the max filter (which is a 2D image dilation)
+    naive_dilation(gpu_image.gpudata,
+                   gpu_dilated_image.gpudata,
+                   numpy.int32(image.shape[1]),
+                   numpy.int32(image.shape[0]),
+                   numpy.int32(neighborhood.shape[0]),
+                   block=block,
+                   grid=grid)
 
-print('Truth (CPU):')
-print(truth)
-print()
-
-print('Comparison:')
-print(truth == dst)
-print()
+    # TODO: Perform peak-finding on GPU, not CPU
+    detected_peaks = gpu_dilated_image.get() == image
+    detected_peaks[image < threshold] = False
+    return detected_peaks 
