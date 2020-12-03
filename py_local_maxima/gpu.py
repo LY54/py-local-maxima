@@ -5,6 +5,7 @@ from pycuda.compiler import SourceModule
 import numpy
 import math
 
+
 naive_dilation_mod = SourceModule("""
 #define FLT_MAX     3.40282347E+38F
 
@@ -46,15 +47,15 @@ def detect_naive(image, neighborhood, threshold=1e-12):
     gpu_image = gpuarray.to_gpu(image)
     gpu_dilated_image = gpuarray.to_gpu(image)
     block = (32, 32, 1)
-    grid = (math.ceil(image.shape[1] / block[0]),
-            math.ceil(image.shape[0] / block[1]),
+    grid = (math.ceil(image.shape[0] / block[0]),
+            math.ceil(image.shape[1] / block[1]),
             1)
 
     # Do the max filter (which is a 2D image dilation)
     naive_dilation(gpu_image.gpudata,
                    gpu_dilated_image.gpudata,
-                   numpy.int32(image.shape[1]),
                    numpy.int32(image.shape[0]),
+                   numpy.int32(image.shape[1]),
                    numpy.int32(neighborhood.shape[0]),
                    block=block,
                    grid=grid)
